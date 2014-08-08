@@ -88,7 +88,7 @@ class UglyQueue
     }
 
     /**
-     * Close file_queue, writing out contents to file.
+     * Close this ugly queue, writing out contents to file.
      */
     public function unlock()
     {
@@ -173,7 +173,7 @@ HTML;
     public function processQueue($count = 1)
     {
         if ($this->init === false)
-            throw new \RuntimeException('file_queue::load_queue_data - Must first initialize queue!');
+            throw new \RuntimeException('UglyQueue::processQueue - Must first initialize queue!');
 
         // If we don't have a lock, assume issue and move on.
         if ($this->haveLock === false || !file_exists($this->queueGroupDirPath.'queue.txt'))
@@ -244,7 +244,7 @@ HTML;
     public function addToQueue($key, $value)
     {
         if ($this->init === false)
-            throw new \RuntimeException('file_queue::add_to_queue - Must first initialize queue!');
+            throw new \RuntimeException('UglyQueue::addToQueue - Must first initialize queue!');
 
         // If we don't have a lock, assume issue and move on.
         if ($this->haveLock === false)
