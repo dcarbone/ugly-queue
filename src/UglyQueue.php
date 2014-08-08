@@ -308,4 +308,48 @@ HTML;
     {
         return $this->queueBaseDir;
     }
+
+    /**
+     * @return int|null
+     * @throws \RuntimeException
+     */
+    public function getQueueItemCount()
+    {
+        if ($this->init === false)
+            throw new \RuntimeException('UglyQueue::getQueueItemCount - Must first initialize queue');
+
+        return FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
+    }
+
+    /**
+     * @param string $key
+     * @return bool
+     * @throws \RuntimeException
+     */
+    public function keyExistsInQueue($key)
+    {
+        if ($this->init === false)
+            throw new \RuntimeException('UglyQueue::keyExistsInQueue - Must first initialize queue');
+
+        // If we don't have a lock, assume issue and move on.
+        if ($this->haveLock === false)
+            throw new \RuntimeException('UglyQueue::keyExistsInQueue - Must first acquire queue lock');
+
+        $key = (string)$key;
+
+        // Try to open the file for reading / writing.
+        $queue_file_handle = fopen($this->queueGroupDirPath.'queue.txt', 'r');
+
+        while(($line = fscanf($queue_file_handle, "%s\t")) !== false)
+        {
+            if (strpos($line, $key) === 0)
+            {
+                fclose($queue_file_handle);
+                return true;
+            }
+        }
+
+        fclose($queue_file_handle);
+        return false;
+    }
 }
