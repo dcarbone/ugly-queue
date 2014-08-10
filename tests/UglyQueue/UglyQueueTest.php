@@ -123,6 +123,30 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenCallingIsLockedOnUninitializedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $isLocked = $uglyQueue->isLocked();
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::addToQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToAddItemsToUninitializedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $addToQueue = $uglyQueue->addToQueue('test', 'value');
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::initialize
      * @covers \DCarbone\UglyQueue::getInit
      * @uses \DCarbone\UglyQueue
@@ -137,6 +161,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($uglyQueue->getInit());
 
         return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::addToQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToAddItemsToQueueWithoutLock(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $addToQueue = $uglyQueue->addToQueue('test', 'value');
     }
 
     /**
@@ -178,10 +214,24 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testIsLockedReturnsFalseBeforeLockingAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $isLocked = $uglyQueue->isLocked();
+
+        $this->assertFalse($isLocked);
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::initialize
      * @covers \DCarbone\UglyQueue::__construct
      * @covers \DCarbone\UglyQueue::getInit
      * @uses \DCarbone\UglyQueue
+     * @return \DCarbone\UglyQueue
      */
     public function testCanInitializeExistingQueue()
     {
@@ -198,10 +248,37 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $uglyQueue->initialize('tasty-sandwich');
 
         $this->assertTrue($uglyQueue->getInit());
+
+        return $uglyQueue;
     }
 
     /**
      * @covers \DCarbone\UglyQueue::lock
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \InvalidArgumentException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenPassingNonIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $uglyQueue->lock('7 billion');
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::lock
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \InvalidArgumentException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenPassingNegativeIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $uglyQueue->lock(-73);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::lock
+     * @covers \DCarbone\UglyQueue::isLocked
      * @covers \DCarbone\UglyQueue::createQueueLock
      * @uses \DCarbone\UglyQueue
      * @depends testCanInitializeNewUglyQueue
@@ -228,4 +305,110 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         return $uglyQueue;
     }
 
+    /**
+     * @covers \DCarbone\UglyQueue::lock
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeExistingQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testCannotLockInitializedQueueThatIsAlreadyLocked(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $lock = $uglyQueue->lock();
+
+        $this->assertFalse($lock);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanLockUglyQueueWithDefaultTTL
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testIsLockedReturnsTrueAfterLockingInitializedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $isLocked = $uglyQueue->isLocked();
+        $this->assertTrue($isLocked);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::unlock
+     * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
+     * @depends testCanLockUglyQueueWithDefaultTTL
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanUnlockLockedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $uglyQueue->unlock();
+
+        $queueGroupDir = $uglyQueue->getQueueGroupDirPath();
+
+        $this->assertFileNotExists($queueGroupDir.'queue.lock');
+
+        return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanUnlockLockedQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testIsLockedReturnsFalseAfterUnlockingQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $isLocked = $uglyQueue->isLocked();
+
+        $this->assertFalse($isLocked);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::lock
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
+     * @depends testCanUnlockLockedQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testIsLockedReturnsFalseWithStaleQueueLockFile(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $uglyQueue->lock(2);
+        $isLocked = $uglyQueue->isLocked();
+        $this->assertTrue($isLocked);
+
+        sleep(3);
+
+        $isLocked = $uglyQueue->isLocked();
+        $this->assertFalse($isLocked);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::lock
+     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\UglyQueue::getQueueGroupDirPath
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanUnlockLockedQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanLockQueueWithValidIntegerValue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $locked = $uglyQueue->lock(200);
+
+        $this->assertTrue($locked);
+
+        $queueDir = $uglyQueue->getQueueGroupDirPath();
+
+        $this->assertFileExists($queueDir.'queue.lock');
+
+        $decode = @json_decode(file_get_contents($queueDir.'queue.lock'));
+
+        $this->assertTrue((json_last_error() === JSON_ERROR_NONE));
+        $this->assertObjectHasAttribute('ttl', $decode);
+        $this->assertObjectHasAttribute('born', $decode);
+        $this->assertEquals(200, $decode->ttl);
+
+        return $uglyQueue;
+    }
 }

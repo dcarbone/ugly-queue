@@ -58,10 +58,17 @@ class UglyQueue
 
     /**
      * @param int $ttl Time to live in seconds
+     * @throws \InvalidArgumentException
      * @return bool
      */
     public function lock($ttl = 250)
     {
+        if (!is_int($ttl))
+            throw new \InvalidArgumentException('UglyQueue::lock - Argument 1 expected to be positive integer, "'.gettype($ttl).'" seen');
+
+        if ($ttl < 0)
+            throw new \InvalidArgumentException('UglyQueue::lock - Argument 1 expected to be positive integer, "'.$ttl.'" seen');
+
         $already_locked = $this->isLocked();
 
         // If there is no lock, currently
@@ -102,10 +109,14 @@ class UglyQueue
     }
 
     /**
+     * @throws \RuntimeException
      * @return bool
      */
     public function isLocked()
     {
+        if ($this->init === false)
+            throw new \RuntimeException('UglyQueue::isLocked - Must first initialize queue');
+
         // First check for lock file
         if (is_file($this->queueGroupDirPath.'queue.lock'))
         {
@@ -248,13 +259,13 @@ HTML;
 
         // If we don't have a lock, assume issue and move on.
         if ($this->haveLock === false)
-            return false;
+            throw new \RuntimeException('UglyQueue::addToQueue - You do not have a lock on this queue');
 
         if (!is_resource($this->_tmpHandle))
         {
             $this->_tmpHandle = fopen($this->queueGroupDirPath.'queue.tmp', 'w+');
             if ($this->_tmpHandle === false)
-                return false;
+                throw new \RuntimeException('UglyQueue::addToQueue - Unable to create "queue.tmp" file');
         }
 
         if (is_array($value) || $value instanceof \stdClass)
