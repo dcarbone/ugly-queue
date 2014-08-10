@@ -180,6 +180,7 @@ HTML;
     /**
      * @param int $count
      * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      * @return bool|array
      */
     public function processQueue($count = 1)
@@ -188,8 +189,16 @@ HTML;
             throw new \RuntimeException('UglyQueue::processQueue - Must first initialize queue!');
 
         // If we don't have a lock, assume issue and move on.
-        if ($this->haveLock === false || !file_exists($this->queueGroupDirPath.'queue.txt'))
-            return false;
+        if ($this->haveLock === false)
+            throw new \RuntimeException('UglyQueue::processQueue - Cannot process queue locked by another process');
+
+        // If non-int valid is passed
+        if (!is_int($count))
+            throw new \InvalidArgumentException('UglyQueue::processQueue - Argument 1 expected to be integer greater than 0, "'.gettype($count).'" seen');
+
+        // If negative integer passed
+        if ($count <= 0)
+            throw new \InvalidArgumentException('UglyQueue::processQueue - Argument 1 expected to be integer greater than 0, "'.$count.'" seen');
 
         // Find number of lines in the queue file
         $lineCount  = FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
@@ -222,7 +231,6 @@ HTML;
             rewind($queueFileHandle);
             ftruncate($queueFileHandle, 0);
             fclose($queueFileHandle);
-            $this->unlock();
         }
         // Otherwise, create new queue file minus the processed lines.
         else
@@ -314,12 +322,7 @@ HTML;
         if ($this->init === false)
             throw new \RuntimeException('UglyQueue::getQueueItemCount - Must first initialize queue');
 
-        $count = FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
-
-        if ($count > 0)
-            return ($count - 1);
-
-        return $count;
+        return FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
     }
 
     /**

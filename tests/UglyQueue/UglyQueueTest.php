@@ -171,6 +171,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToProcessQueueBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue();
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::initialize
      * @covers \DCarbone\UglyQueue::getInit
      * @uses \DCarbone\UglyQueue
@@ -185,6 +197,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($uglyQueue->getInit());
 
         return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToProcessQueueAfterInitializationBeforeLock(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue();
     }
 
     /**
@@ -471,7 +495,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock(\DCarbone\UglyQueue $uglyQueue)
     {
-        foreach($this->tastySandwich as $k=>$v)
+        foreach(array_reverse($this->tastySandwich, true) as $k=>$v)
         {
             $added = $uglyQueue->addToQueue($k, $v);
             $this->assertTrue($added);
@@ -521,7 +545,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     {
         $itemCount = $uglyQueue->getQueueItemCount();
 
-        $this->assertEquals(10, $itemCount);
+        $this->assertEquals(11, $itemCount);
     }
 
     /**
@@ -535,5 +559,75 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $exists = $uglyQueue->keyExistsInQueue(5);
 
         $this->assertTrue($exists);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @expectedException \InvalidArgumentException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToProcessLockedQueueWithNonInteger(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue('Eleventy Billion');
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @expectedException \InvalidArgumentException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToProcessLockedQueueWithIntegerLessThan1(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue(0);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @covers \DCarbone\UglyQueue::getQueueItemCount
+     * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanGetPartialQueueContents(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue(5);
+
+        $this->assertEquals(5, count($process));
+
+        $this->assertArrayHasKey('0', $process);
+        $this->assertArrayHasKey('4', $process);
+
+        $this->assertEquals(6, $uglyQueue->getQueueItemCount());
+
+        return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::processQueue
+     * @covers \DCarbone\UglyQueue::getQueueItemCount
+     * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
+     * @depends testCanGetPartialQueueContents
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanGetFullQueueContents(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $process = $uglyQueue->processQueue(6);
+
+        $this->assertEquals(6, count($process));
+
+        $this->assertArrayHasKey('10', $process);
+        $this->assertArrayHasKey('5', $process);
+
+        $this->assertEquals(0, $uglyQueue->getQueueItemCount());
+
+        return $uglyQueue;
     }
 }
