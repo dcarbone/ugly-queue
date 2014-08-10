@@ -43,6 +43,8 @@ class UglyQueue
             throw new \RuntimeException('UglyQueue::__construct - "$config[\'queue-base-dir\']" points to a directory that either doesn\'t exist or is not writable');
 
         $this->config = $config;
+
+        $this->queueBaseDir = $this->config['queue-base-dir'];
     }
 
     /**
@@ -130,14 +132,12 @@ class UglyQueue
     }
 
     /**
-     * @param string $queue_group
+     * @param string $queueGroup
      */
-    public function initialize($queue_group)
+    public function initialize($queueGroup)
     {
-        $this->queueBaseDir = $this->config['queue-base-dir'];
-
-        $this->queueGroup = $queue_group;
-        $this->queueGroupDirPath = $this->queueBaseDir.$queue_group.DIRECTORY_SEPARATOR;
+        $this->queueGroup = $queueGroup;
+        $this->queueGroupDirPath = $this->queueBaseDir.$queueGroup.DIRECTORY_SEPARATOR;
 
         // Create directory for this queue group
         if (!is_dir($this->queueGroupDirPath))
@@ -294,22 +294,6 @@ HTML;
     }
 
     /**
-     * @return string
-     */
-    public function getQueueGroup()
-    {
-        return $this->queueGroup;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQueueBaseDir()
-    {
-        return $this->queueBaseDir;
-    }
-
-    /**
      * @return int|null
      * @throws \RuntimeException
      */
@@ -351,5 +335,37 @@ HTML;
 
         fclose($queue_file_handle);
         return false;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getInit()
+    {
+        return $this->init;
+    }
+
+    /**
+     * @return string
+     */
+    public function getQueueBaseDir()
+    {
+        return $this->queueBaseDir;
+    }
+
+    /**
+     * @return string
+     */
+    public function getQueueGroupDirPath()
+    {
+        return $this->queueGroupDirPath;
+    }
+
+    /**
+     * @return string
+     */
+    public function getQueueGroup()
+    {
+        return $this->queueGroup;
     }
 }
