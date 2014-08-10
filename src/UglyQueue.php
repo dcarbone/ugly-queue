@@ -103,7 +103,7 @@ class UglyQueue
     {
         if ($this->haveLock === true)
         {
-            @FileHelper::superUnlink($this->queueGroupDirPath.'queue.lock');
+            unlink($this->queueGroupDirPath.'queue.lock');
             $this->haveLock = false;
         }
     }
@@ -124,8 +124,9 @@ class UglyQueue
 
             // If we have an invalid lock structure, THIS IS BAD.
             if (!isset($lock['ttl']) || !isset($lock['born']))
-                return true;
+                throw new \RuntimeException('UglyQueue::isLocked - Invalid "queue.lock" file structure seen at "'.$this->queueGroupDirPath.'queue.lock'.'"');
 
+            // Otherwise...
             $lock_ttl = ((int)$lock['born'] + (int)$lock['ttl']);
 
             // If we're within the TTL of the lock, assume another thread is already processing.
@@ -134,7 +135,7 @@ class UglyQueue
                 return true;
 
             // Else, remove lock file and assume we're good to go!
-            @FileHelper::superUnlink($this->queueGroupDirPath.'queue.lock');
+            unlink($this->queueGroupDirPath.'queue.lock');
             return false;
         }
 
@@ -239,7 +240,7 @@ HTML;
 
             fclose($queue_file_handle);
             fclose($tmp);
-            FileHelper::superUnlink($this->queueGroupDirPath.'queue.txt');
+            unlink($this->queueGroupDirPath.'queue.txt');
             rename($this->queueGroupDirPath.'queue.tmp', $this->queueGroupDirPath.'queue.txt');
         }
 
@@ -296,7 +297,7 @@ HTML;
                 }
 
                 fclose($queue_file_handle);
-                FileHelper::superUnlink($this->queueGroupDirPath.'queue.txt');
+                unlink($this->queueGroupDirPath.'queue.txt');
             }
 
             fclose($this->_tmpHandle);
@@ -305,6 +306,8 @@ HTML;
     }
 
     /**
+     * This method will always return n+1, as there is always a final newline at the end of the file
+     *
      * @return int|null
      * @throws \RuntimeException
      */
@@ -313,7 +316,12 @@ HTML;
         if ($this->init === false)
             throw new \RuntimeException('UglyQueue::getQueueItemCount - Must first initialize queue');
 
-        return FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
+        $count = FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
+
+        if ($count > 0)
+            return ($count - 1);
+
+        return $count;
     }
 
     /**

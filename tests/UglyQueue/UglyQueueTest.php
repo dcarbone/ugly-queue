@@ -147,6 +147,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::getQueueItemCount
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToGetCountOfItemsInQueueBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $itemCount = $uglyQueue->getQueueItemCount();
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::initialize
      * @covers \DCarbone\UglyQueue::getInit
      * @uses \DCarbone\UglyQueue
@@ -224,6 +236,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $isLocked = $uglyQueue->isLocked();
 
         $this->assertFalse($isLocked);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::getQueueItemCount
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testGetQueueItemCountReturnsZeroAfterInitializingEmptyQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $itemCount = $uglyQueue->getQueueItemCount();
+        $this->assertEquals(0, $itemCount);
     }
 
     /**
@@ -409,6 +433,23 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $this->assertObjectHasAttribute('born', $decode);
         $this->assertEquals(200, $decode->ttl);
 
+        return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::addToQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanLockQueueWithValidIntegerValue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanPopulateLockedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        foreach($this->tastySandwich as $k=>$v)
+        {
+            $added = $uglyQueue->addToQueue($k, $v);
+            $this->assertTrue($added);
+        }
         return $uglyQueue;
     }
 }
