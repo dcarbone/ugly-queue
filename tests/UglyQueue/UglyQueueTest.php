@@ -159,6 +159,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::keyExistsInQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanConstructUglyQueueWithValidParameter
+     * @expectedException \RuntimeException
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenTryingToFindKeyBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $keyExists = $uglyQueue->keyExistsInQueue(0);
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::initialize
      * @covers \DCarbone\UglyQueue::getInit
      * @uses \DCarbone\UglyQueue
@@ -176,13 +188,26 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::keyExistsInQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testKeyExistsInQueueReturnsFalseWithEmptyQueueAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $exists = $uglyQueue->keyExistsInQueue(0);
+
+        $this->assertFalse($exists);
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::addToQueue
      * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
+     * @depends testCanInitializeNewUglyQueue
      * @expectedException \RuntimeException
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testExceptionThrownWhenTryingToAddItemsToQueueWithoutLock(\DCarbone\UglyQueue $uglyQueue)
+    public function testExceptionThrownWhenTryingToAddItemsToQueueWithoutLockAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
     {
         $addToQueue = $uglyQueue->addToQueue('test', 'value');
     }
@@ -439,17 +464,76 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::addToQueue
      * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
      * @depends testCanLockQueueWithValidIntegerValue
      * @param \DCarbone\UglyQueue $uglyQueue
      * @return \DCarbone\UglyQueue
      */
-    public function testCanPopulateLockedQueue(\DCarbone\UglyQueue $uglyQueue)
+    public function testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock(\DCarbone\UglyQueue $uglyQueue)
     {
         foreach($this->tastySandwich as $k=>$v)
         {
             $added = $uglyQueue->addToQueue($k, $v);
             $this->assertTrue($added);
         }
+
+        $groupDir = $uglyQueue->getQueueGroupDirPath();
+
+        $this->assertFileExists(
+            $groupDir.'queue.tmp',
+            'queue.tmp file was not created!');
+
+        $lineCount = \DCarbone\Helpers\FileHelper::getLineCount($groupDir.'queue.tmp');
+
+        $this->assertEquals(11, $lineCount);
+
         return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::_populateQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @param \DCarbone\UglyQueue $uglyQueue
+     * @return \DCarbone\UglyQueue
+     */
+    public function testCanForciblyUpdateQueueFileFromTempFile(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $uglyQueue->_populateQueue();
+
+        $groupDir = $uglyQueue->getQueueGroupDirPath();
+
+        $this->assertFileNotExists($groupDir.'queue.tmp');
+
+        $uglyQueue->_populateQueue();
+
+        return $uglyQueue;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::getQueueItemCount
+     * @uses \DCarbone\UglyQueue
+     * @uses \DCarbone\Helpers\FileHelper
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testCanGetCountOfItemsInPopulatedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $itemCount = $uglyQueue->getQueueItemCount();
+
+        $this->assertEquals(10, $itemCount);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::keyExistsInQueue
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testKeyExistsReturnsTrueWithPopulatedQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $exists = $uglyQueue->keyExistsInQueue(5);
+
+        $this->assertTrue($exists);
     }
 }

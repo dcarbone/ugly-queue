@@ -192,22 +192,22 @@ HTML;
             return false;
 
         // Find number of lines in the queue file
-        $line_count  = FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
+        $lineCount  = FileHelper::getLineCount($this->queueGroupDirPath.'queue.txt');
 
         // If queue line count is 0, assume empty
-        if ($line_count === 0)
+        if ($lineCount === 0)
             return false;
 
         // Try to open the file for reading / writing.
-        $queue_file_handle = fopen($this->queueGroupDirPath.'queue.txt', 'r+');
-        if ($queue_file_handle === false)
+        $queueFileHandle = fopen($this->queueGroupDirPath.'queue.txt', 'r+');
+        if ($queueFileHandle === false)
             $this->unlock();
 
         // Get an array of the oldest $count data in the queue
         $data = array();
-        $start_line = $line_count - $count;
+        $start_line = $lineCount - $count;
         $i = 0;
-        while (($line = fscanf($queue_file_handle, "%s\t%s\n")) !== false && $i < $line_count)
+        while (($line = fscanf($queueFileHandle, "%s\t%s\n")) !== false && $i < $lineCount)
         {
             if ($i++ >= $start_line)
             {
@@ -217,20 +217,20 @@ HTML;
         }
 
         // If we have consumed the rest of the file
-        if ($count >= $line_count)
+        if ($count >= $lineCount)
         {
-            rewind($queue_file_handle);
-            ftruncate($queue_file_handle, 0);
-            fclose($queue_file_handle);
+            rewind($queueFileHandle);
+            ftruncate($queueFileHandle, 0);
+            fclose($queueFileHandle);
             $this->unlock();
         }
         // Otherwise, create new queue file minus the processed lines.
         else
         {
             $tmp = fopen($this->queueGroupDirPath.'queue.tmp', 'w+');
-            rewind($queue_file_handle);
+            rewind($queueFileHandle);
             $i = 0;
-            while (($line = fgets($queue_file_handle)) !== false && $i < $start_line)
+            while (($line = fgets($queueFileHandle)) !== false && $i < $start_line)
             {
                 if ($line !== "\n" || $line !== "")
                     fwrite($tmp, $line);
@@ -238,7 +238,7 @@ HTML;
                 $i++;
             }
 
-            fclose($queue_file_handle);
+            fclose($queueFileHandle);
             fclose($tmp);
             unlink($this->queueGroupDirPath.'queue.txt');
             rename($this->queueGroupDirPath.'queue.tmp', $this->queueGroupDirPath.'queue.txt');
@@ -283,20 +283,20 @@ HTML;
      *
      * @return void
      */
-    protected function _populateQueue()
+    public function _populateQueue()
     {
         if (is_resource($this->_tmpHandle))
         {
             if (file_exists($this->queueGroupDirPath.'queue.txt'))
             {
-                $queue_file_handle = fopen($this->queueGroupDirPath.'queue.txt', 'r+');
-                while (($line = fgets($queue_file_handle)) !== false)
+                $queueFileHandle = fopen($this->queueGroupDirPath.'queue.txt', 'r+');
+                while (($line = fgets($queueFileHandle)) !== false)
                 {
                     if ($line !== "\n" && $line !== "")
                         fwrite($this->_tmpHandle, $line);
                 }
 
-                fclose($queue_file_handle);
+                fclose($queueFileHandle);
                 unlink($this->queueGroupDirPath.'queue.txt');
             }
 
@@ -306,9 +306,7 @@ HTML;
     }
 
     /**
-     * This method will always return n+1, as there is always a final newline at the end of the file
-     *
-     * @return int|null
+     * @return int
      * @throws \RuntimeException
      */
     public function getQueueItemCount()
@@ -334,25 +332,23 @@ HTML;
         if ($this->init === false)
             throw new \RuntimeException('UglyQueue::keyExistsInQueue - Must first initialize queue');
 
-        // If we don't have a lock, assume issue and move on.
-        if ($this->haveLock === false)
-            throw new \RuntimeException('UglyQueue::keyExistsInQueue - Must first acquire queue lock');
-
         $key = (string)$key;
 
         // Try to open the file for reading / writing.
-        $queue_file_handle = fopen($this->queueGroupDirPath.'queue.txt', 'r');
+        $queueFileHandle = fopen($this->queueGroupDirPath.'queue.txt', 'r');
 
-        while(($line = fscanf($queue_file_handle, "%s\t")) !== false)
+        while(($line = fscanf($queueFileHandle, "%s\t")) !== false)
         {
-            if (strpos($line, $key) === 0)
+            list($queueKey) = $line;
+
+            if ($key === $queueKey)
             {
-                fclose($queue_file_handle);
+                fclose($queueFileHandle);
                 return true;
             }
         }
 
-        fclose($queue_file_handle);
+        fclose($queueFileHandle);
         return false;
     }
 
