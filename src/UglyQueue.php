@@ -361,7 +361,23 @@ HTML;
      */
     public function queueExists($groupName)
     {
-        return (bool)is_dir($this->getQueueBaseDir().$groupName);
+        return (bool)is_dir($this->queueBaseDir.$groupName);
+    }
+
+    /**
+     * @return array
+     */
+    public function getInitializedQueueList()
+    {
+        $queueList = array();
+        foreach(glob(realpath($this->queueBaseDir).DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR) as $queueDir)
+        {
+            $exp = explode(DIRECTORY_SEPARATOR, $queueDir);
+            $dir = end($exp);
+            if (strpos($dir, '.') !== 0)
+                $queueList[] = $dir;
+        }
+        return $queueList;
     }
 
     /**
