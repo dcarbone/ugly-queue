@@ -630,4 +630,30 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
 
         return $uglyQueue;
     }
+
+    /**
+     * @covers \DCarbone\UglyQueue::queueExists
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testCanDetermineExistenceOfExistingQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $exists = $uglyQueue->queueExists('tasty-sandwich');
+
+        $this->assertTrue($exists);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::queueExists
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeNewUglyQueue
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testCanDetermineExistenceOfNonExistingQueue(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $exists = $uglyQueue->queueExists('nasty-sandwich');
+
+        $this->assertFalse($exists);
+    }
 }

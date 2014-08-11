@@ -356,6 +356,15 @@ HTML;
     }
 
     /**
+     * @param string $groupName
+     * @return bool
+     */
+    public function queueExists($groupName)
+    {
+        return (bool)is_dir($this->getQueueBaseDir().$groupName);
+    }
+
+    /**
      * @return boolean
      */
     public function getInit()
