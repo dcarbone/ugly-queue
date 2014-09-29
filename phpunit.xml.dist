@@ -17,6 +17,11 @@
         <exclude>./tests/misc</exclude>
     </testsuite>
 
+    <testsuite name="UglyQueueManager">
+        <directory>./tests/UglyQueueManager</directory>
+        <exclude>./tests/misc</exclude>
+    </testsuite>
+
     <filter>
         <whitelist addUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./src</directory>

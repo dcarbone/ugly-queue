@@ -76,7 +76,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
             if (file_exists($queueDir.DIRECTORY_SEPARATOR.self::UGLY_QUEUE_SERIALIZED_NAME))
                 $uglyQueue = unserialize(file_get_contents($queueDir.DIRECTORY_SEPARATOR.self::UGLY_QUEUE_SERIALIZED_NAME));
             else
-                $uglyQueue = UglyQueue::queueWithGroupDirectoryPathAndObservers($queueDir, $manager->observers);
+                $uglyQueue = UglyQueue::queueWithDirectoryPathAndObservers($queueDir, $manager->observers);
 
             $manager->addQueue($uglyQueue);
         }
@@ -109,7 +109,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
      */
     public function addQueueAtPath($path)
     {
-        $uglyQueue = UglyQueue::queueWithGroupDirectoryPathAndObservers($path, $this->observers);
+        $uglyQueue = UglyQueue::queueWithDirectoryPathAndObservers($path, $this->observers);
 
         return $this->addQueue($uglyQueue);
     }

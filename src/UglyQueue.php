@@ -51,7 +51,7 @@ class UglyQueue implements \Serializable, \SplSubject
      * @throws \InvalidArgumentException
      * @return UglyQueue
      */
-    public static function queueWithGroupDirectoryPathAndObservers($directoryPath, array $observers = array())
+    public static function queueWithDirectoryPathAndObservers($directoryPath, array $observers = array())
     {
         if (!is_string($directoryPath))
             throw new \InvalidArgumentException('Argument 1 expected to be string, '.gettype($directoryPath).' seen');
@@ -72,7 +72,7 @@ class UglyQueue implements \Serializable, \SplSubject
         $uglyQueue = new UglyQueue();
         $uglyQueue->observers = $observers;
 
-        $split = preg_split('#[/\\]+/#', $directoryPath);
+        $split = preg_split('#[/\\\]+#', $directoryPath);
 
         $uglyQueue->_name = end($split);
         $uglyQueue->_path = rtrim(realpath(implode(DIRECTORY_SEPARATOR, $split)), "/\\").DIRECTORY_SEPARATOR;
@@ -226,9 +226,9 @@ HTML;
         {
             $lock = json_decode(file_get_contents($this->_path.'queue.lock'), true);
 
-            // If we have an invalid lock structure, THIS IS BAD.
+            // If we have an invalid lock structure.
             if (!isset($lock['ttl']) || !isset($lock['born']))
-                throw new \RuntimeException(get_class($this).'::isLocked - Invalid "queue.lock" file structure seen at "'.$this->_path.'queue.lock'.'"');
+                throw new \RuntimeException('Invalid "queue.lock" file structure seen at "'.$this->_path.'queue.lock".');
 
             // Otherwise...
             $lock_ttl = ((int)$lock['born'] + (int)$lock['ttl']);
@@ -414,7 +414,7 @@ HTML;
         // Try to open the file for reading / writing.
         $queueFileHandle = fopen($this->_path.'queue.txt', 'r');
 
-        while(($line = fscanf($queueFileHandle, "%s\t")) !== false)
+        while(($line = fscanf($queueFileHandle, "%s\t%s\n")) !== false)
         {
             list ($lineKey, $lineValue) = $line;
 

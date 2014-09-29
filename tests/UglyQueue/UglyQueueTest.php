@@ -27,17 +27,13 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     );
 
     /**
-     * @covers \DCarbone\UglyQueue::__construct
+     * @covers \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers
      * @uses \DCarbone\UglyQueue
      * @return \DCarbone\UglyQueue
      */
-    public function testCanConstructUglyQueueWithValidParameter()
+    public function testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers()
     {
-        $conf = array(
-            'queue-base-dir' => dirname(__DIR__).'/misc/',
-        );
-
-        $uglyQueue = new \DCarbone\UglyQueue($conf);
+        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
 
@@ -45,164 +41,19 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::__construct
+     * @covers \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers
      * @uses \DCarbone\UglyQueue
      * @expectedException \InvalidArgumentException
      */
-    public function testExceptionThrownWhenConstructingUglyQueueWithEmptyOrInvalidConf()
+    public function testExceptionThrownWhenInitializingUglyQueueWithEmptyOrInvalidConf()
     {
-        $conf = array();
-        $uglyQueue = new \DCarbone\UglyQueue($conf);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::__construct
-     * @uses \DCarbone\UglyQueue
-     * @expectedException \RuntimeException
-     */
-    public function testExceptionThrownWhenConstructingUglyQueueWithInvalidQueueBaseDirPath()
-    {
-        $conf = array(
-            'queue-base-dir' => 'sandwiches',
-        );
-
-        $uglyQueue = new \DCarbone\UglyQueue($conf);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getQueueBaseDir
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testCanGetQueueBaseDir(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $queueBaseDir = $uglyQueue->getQueueBaseDir();
-
-        $this->assertFileExists(
-            $queueBaseDir,
-            'Could not verify that Queue Base Dir exists');
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getQueueGroup
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testGetQueueGroupReturnsNullBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $queueGroup = $uglyQueue->getQueueGroup();
-
-        $this->assertNull($queueGroup);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getInit
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testGetInitReturnsFalseBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $init = $uglyQueue->getInit();
-        $this->assertFalse($init);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getQueueGroupDirPath
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testGetQueueGroupDirPathReturnsNullBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $queueGroupDir = $uglyQueue->getQueueGroupDirPath();
-
-        $this->assertNull($queueGroupDir);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::isLocked
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @expectedException \RuntimeException
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testExceptionThrownWhenCallingIsLockedOnUninitializedQueue(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $isLocked = $uglyQueue->isLocked();
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::addToQueue
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @expectedException \RuntimeException
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testExceptionThrownWhenTryingToAddItemsToUninitializedQueue(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $addToQueue = $uglyQueue->addToQueue('test', 'value');
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getQueueItemCount
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @expectedException \RuntimeException
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testExceptionThrownWhenTryingToGetCountOfItemsInQueueBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $itemCount = $uglyQueue->getQueueItemCount();
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::keyExistsInQueue
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @expectedException \RuntimeException
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testExceptionThrownWhenTryingToFindKeyBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $keyExists = $uglyQueue->keyExistsInQueue(0);
+        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(array());
     }
 
     /**
      * @covers \DCarbone\UglyQueue::processQueue
      * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @expectedException \RuntimeException
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testExceptionThrownWhenTryingToProcessQueueBeforeInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $process = $uglyQueue->processQueue();
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::initialize
-     * @covers \DCarbone\UglyQueue::getInit
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
-     * @param \DCarbone\UglyQueue $uglyQueue
-     * @return \DCarbone\UglyQueue
-     */
-    public function testCanInitializeNewUglyQueue(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $uglyQueue->initialize('tasty-sandwich');
-
-        $this->assertTrue($uglyQueue->getInit());
-
-        return $uglyQueue;
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::processQueue
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @expectedException \RuntimeException
      * @param \DCarbone\UglyQueue $uglyQueue
      */
@@ -214,7 +65,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::keyExistsInQueue
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      */
     public function testKeyExistsInQueueReturnsFalseWithEmptyQueueAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
@@ -227,60 +78,48 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::addToQueue
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @expectedException \RuntimeException
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testExceptionThrownWhenTryingToAddItemsToQueueWithoutLockAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    public function testExceptionThrownWhenTryingToAddItemsToQueueWithoutLock(\DCarbone\UglyQueue $uglyQueue)
     {
         $addToQueue = $uglyQueue->addToQueue('test', 'value');
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::getInit
+     * @covers \DCarbone\UglyQueue::__get
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testGetInitReturnsTrueAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    public function testCanGetQueueDirectory(\DCarbone\UglyQueue $uglyQueue)
     {
-        $init = $uglyQueue->getInit();
-        $this->assertTrue($init);
+        $queuePath = $uglyQueue->path;
+
+        $this->assertFileExists($queuePath);
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::getQueueGroupDirPath
+     * @covers \DCarbone\UglyQueue::__get
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testCanGetQueueGroupDirectoryAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    public function testCanGetQueueName(\DCarbone\UglyQueue $uglyQueue)
     {
-        $queueGroupDir = $uglyQueue->getQueueGroupDirPath();
+        $queueName = $uglyQueue->name;
 
-        $this->assertFileExists($queueGroupDir);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getQueueGroup
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testCanGetQueueGroupAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $queueGroup = $uglyQueue->getQueueGroup();
-
-        $this->assertEquals('tasty-sandwich', $queueGroup);
+        $this->assertEquals('tasty-sandwich', $queueName);
     }
 
     /**
      * @covers \DCarbone\UglyQueue::isLocked
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testIsLockedReturnsFalseBeforeLockingAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
+    public function testIsLockedReturnsFalseBeforeLocking(\DCarbone\UglyQueue $uglyQueue)
     {
         $isLocked = $uglyQueue->isLocked();
 
@@ -290,37 +129,25 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::getQueueItemCount
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testGetQueueItemCountReturnsZeroAfterInitializingEmptyQueue(\DCarbone\UglyQueue $uglyQueue)
+    public function testGetQueueItemCountReturnsZeroWithEmptyQueue(\DCarbone\UglyQueue $uglyQueue)
     {
         $itemCount = $uglyQueue->getQueueItemCount();
         $this->assertEquals(0, $itemCount);
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::initialize
-     * @covers \DCarbone\UglyQueue::__construct
-     * @covers \DCarbone\UglyQueue::getInit
+     * @covers \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers
      * @uses \DCarbone\UglyQueue
      * @return \DCarbone\UglyQueue
      */
     public function testCanInitializeExistingQueue()
     {
-        $conf = array(
-            'queue-base-dir' => dirname(__DIR__).'/misc/',
-        );
-
-        $uglyQueue = new \DCarbone\UglyQueue($conf);
+        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
-
-        $this->assertFalse($uglyQueue->getInit());
-
-        $uglyQueue->initialize('tasty-sandwich');
-
-        $this->assertTrue($uglyQueue->getInit());
 
         return $uglyQueue;
     }
@@ -328,7 +155,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::lock
      * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @expectedException \InvalidArgumentException
      * @param \DCarbone\UglyQueue $uglyQueue
      */
@@ -340,7 +167,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::lock
      * @uses \DCarbone\UglyQueue
-     * @depends testCanConstructUglyQueueWithValidParameter
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @expectedException \InvalidArgumentException
      * @param \DCarbone\UglyQueue $uglyQueue
      */
@@ -352,9 +179,9 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::lock
      * @covers \DCarbone\UglyQueue::isLocked
-     * @covers \DCarbone\UglyQueue::createQueueLock
+     * @covers \DCarbone\UglyQueue::createLockFile
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
      * @param \DCarbone\UglyQueue $uglyQueue
      * @return \DCarbone\UglyQueue
      */
@@ -364,7 +191,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($locked);
 
-        $queueDir = $uglyQueue->getQueueBaseDir().$uglyQueue->getQueueGroup().'/';
+        $queueDir = $uglyQueue->path;
 
         $this->assertFileExists($queueDir.'queue.lock');
 
@@ -385,7 +212,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      * @depends testCanInitializeExistingQueue
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testCannotLockInitializedQueueThatIsAlreadyLocked(\DCarbone\UglyQueue $uglyQueue)
+    public function testCannotLockQueueThatIsAlreadyLocked(\DCarbone\UglyQueue $uglyQueue)
     {
         $lock = $uglyQueue->lock();
 
@@ -398,7 +225,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      * @depends testCanLockUglyQueueWithDefaultTTL
      * @param \DCarbone\UglyQueue $uglyQueue
      */
-    public function testIsLockedReturnsTrueAfterLockingInitializedQueue(\DCarbone\UglyQueue $uglyQueue)
+    public function testIsLockedReturnsTrueAfterLocking(\DCarbone\UglyQueue $uglyQueue)
     {
         $isLocked = $uglyQueue->isLocked();
         $this->assertTrue($isLocked);
@@ -416,7 +243,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     {
         $uglyQueue->unlock();
 
-        $queueGroupDir = $uglyQueue->getQueueGroupDirPath();
+        $queueGroupDir = $uglyQueue->path;
 
         $this->assertFileNotExists($queueGroupDir.'queue.lock');
 
@@ -459,7 +286,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::lock
      * @covers \DCarbone\UglyQueue::isLocked
-     * @covers \DCarbone\UglyQueue::getQueueGroupDirPath
+     * @covers \DCarbone\UglyQueue::__get
      * @uses \DCarbone\UglyQueue
      * @depends testCanUnlockLockedQueue
      * @param \DCarbone\UglyQueue $uglyQueue
@@ -471,7 +298,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($locked);
 
-        $queueDir = $uglyQueue->getQueueGroupDirPath();
+        $queueDir = $uglyQueue->path;
 
         $this->assertFileExists($queueDir.'queue.lock');
 
@@ -501,7 +328,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
             $this->assertTrue($added);
         }
 
-        $groupDir = $uglyQueue->getQueueGroupDirPath();
+        $groupDir = $uglyQueue->path;
 
         $this->assertFileExists(
             $groupDir.'queue.tmp',
@@ -525,7 +352,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     {
         $uglyQueue->_populateQueue();
 
-        $groupDir = $uglyQueue->getQueueGroupDirPath();
+        $groupDir = $uglyQueue->path;
 
         $this->assertFileNotExists($groupDir.'queue.tmp');
 
@@ -629,45 +456,5 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(0, $uglyQueue->getQueueItemCount());
 
         return $uglyQueue;
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::queueExists
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testCanDetermineExistenceOfExistingQueue(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $exists = $uglyQueue->queueExists('tasty-sandwich');
-
-        $this->assertTrue($exists);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::queueExists
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testCanDetermineExistenceOfNonExistingQueue(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $exists = $uglyQueue->queueExists('nasty-sandwich');
-
-        $this->assertFalse($exists);
-    }
-
-    /**
-     * @covers \DCarbone\UglyQueue::getInitializedQueueList
-     * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeNewUglyQueue
-     * @param \DCarbone\UglyQueue $uglyQueue
-     */
-    public function testCanGetListOfInitializedQueues(\DCarbone\UglyQueue $uglyQueue)
-    {
-        $queueList = $uglyQueue->getInitializedQueueList();
-
-        $this->assertEquals(1, count($queueList));
-        $this->assertContains('tasty-sandwich', $queueList);
     }
 }
