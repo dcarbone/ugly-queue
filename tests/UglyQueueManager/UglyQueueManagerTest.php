@@ -9,6 +9,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
      * @covers \DCarbone\UglyQueueManager::__construct
      * @covers \DCarbone\UglyQueueManager::init
      * @covers \DCarbone\UglyQueue::unserialize
+     * @covers \DCarbone\UglyQueue::__get
      * @covers \DCarbone\UglyQueueManager::addQueue
      * @covers \DCarbone\UglyQueueManager::containsQueueWithName
      * @uses \DCarbone\UglyQueueManager
@@ -56,6 +57,32 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
         );
 
         $manager = \DCarbone\UglyQueueManager::init($config);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueueManager::containsQueueWithName
+     * @uses \DCarbone\UglyQueueManager
+     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @param \DCarbone\UglyQueueManager $manager
+     */
+    public function testCanDetermineIfValidQueueExistsInManager(\DCarbone\UglyQueueManager $manager)
+    {
+        $shouldBeTrue = $manager->containsQueueWithName('tasty-sandwich');
+
+        $this->assertTrue($shouldBeTrue);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueueManager::containsQueueWithName
+     * @uses \DCarbone\UglyQueueManager
+     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @param \DCarbone\UglyQueueManager $manager
+     */
+    public function testCanDetermineQueueDoesNotExistInManager(\DCarbone\UglyQueueManager $manager)
+    {
+        $shouldBeFalse = $manager->containsQueueWithName('i should not exist');
+
+        $this->assertFalse($shouldBeFalse);
     }
 
 //    /**
