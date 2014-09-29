@@ -43,8 +43,6 @@ class UglyQueueManager implements \SplObserver, \SplSubject
         if (!is_dir($config['queue-base-dir']))
             throw new \RuntimeException('"queue-base-dir" points to a directory that does not exist.');
 
-        $this->notifyStatus = self::NOTIFY_MANAGER_INITIALIZED;
-
         $this->config = $config;
         $this->queueBaseDir =  rtrim(realpath($this->config['queue-base-dir']), "/\\").DIRECTORY_SEPARATOR;
         $this->observers = $observers;
@@ -58,18 +56,14 @@ class UglyQueueManager implements \SplObserver, \SplSubject
     public static function init(array $config, array $observers = array())
     {
         /** @var \DCarbone\UglyQueueManager $manager */
-        $manager = new static($config, array());
-
-        $manager->observers = $observers;
-
-        $manager->notify();
+        $manager = new static($config, $observers);
 
         /** @var \DCarbone\UglyQueue $uglyQueue */
 
         foreach(glob($manager->queueBaseDir.DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR) as $queueDir)
         {
             // Try to avoid looking at hidden directories or magic dirs such as '.' and '..'
-            $split = preg_split('#[/\\]+#', $queueDir);
+            $split = preg_split('#[/\\\]+#', $queueDir);
             if (strpos(end($split), '.') === 0)
                 continue;
 
@@ -81,6 +75,9 @@ class UglyQueueManager implements \SplObserver, \SplSubject
             $manager->addQueue($uglyQueue);
         }
 
+        $manager->notifyStatus = self::NOTIFY_MANAGER_INITIALIZED;
+        $manager->notify();
+
         return $manager;
     }
 
@@ -91,9 +88,8 @@ class UglyQueueManager implements \SplObserver, \SplSubject
      */
     public function addQueue(UglyQueue $uglyQueue)
     {
-        if ($this->queueExistsByName($uglyQueue->name))
+        if ($this->containsQueueWithName($uglyQueue->name))
             throw new \InvalidArgumentException('Queue named "'.$uglyQueue->name.'" already exists in this manager.');
-
 
         $this->queues[$uglyQueue->name] = $uglyQueue;
 
@@ -120,7 +116,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
      */
     public function removeQueue(UglyQueue $uglyQueue)
     {
-        if ($this->queueExistsByName($uglyQueue->name))
+        if ($this->containsQueueWithName($uglyQueue->name))
             unset($this->queues[$uglyQueue->name]);
 
         return $this;
@@ -132,7 +128,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
      */
     public function removeQueueByName($name)
     {
-        if ($this->queueExistsByName($name))
+        if ($this->containsQueueWithName($name))
         {
             unset($this->queues[$name]);
             $this->notifyStatus = self::NOTIFY_QUEUE_REMOVED;
@@ -159,7 +155,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
      * @param string $name
      * @return bool
      */
-    public function queueExistsByName($name)
+    public function containsQueueWithName($name)
     {
         return isset($this->queues[$name]);
     }

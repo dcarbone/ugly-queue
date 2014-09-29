@@ -114,6 +114,31 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers \DCarbone\UglyQueue::__get
+     * @uses \DCarbone\UglyQueue
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testCanGetQueueLockedStatus(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $locked = $uglyQueue->locked;
+
+        $this->assertFalse($locked);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueue::__get
+     * @uses \DCarbone\UglyQueue
+     * @expectedException \OutOfBoundsException
+     * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers
+     * @param \DCarbone\UglyQueue $uglyQueue
+     */
+    public function testExceptionThrownWhenAttemptingToGetInvalidProperty(\DCarbone\UglyQueue $uglyQueue)
+    {
+        $sandwich = $uglyQueue->sandwich;
+    }
+
+    /**
      * @covers \DCarbone\UglyQueue::isLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers

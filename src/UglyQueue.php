@@ -256,8 +256,7 @@ HTML;
     public function processQueue($count = 1)
     {
         if ($this->mode === self::QUEUE_READONLY)
-            throw new \RuntimeException('Queue "'.$this->_name.'" cannot be processed.'.
-            '  It was started in Read-Only mode (the user running this process does not have permission to write to the queue directory).');
+            throw new \RuntimeException('Queue "'.$this->_name.'" cannot be processed. It was started in Read-Only mode (the user running this process does not have permission to write to the queue directory).');
 
         // If we don't have a lock, assume issue and move on.
         if ($this->_locked === false)

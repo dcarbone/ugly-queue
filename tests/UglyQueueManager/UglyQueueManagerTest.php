@@ -5,6 +5,59 @@
  */
 class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @covers \DCarbone\UglyQueueManager::__construct
+     * @covers \DCarbone\UglyQueueManager::init
+     * @covers \DCarbone\UglyQueue::unserialize
+     * @covers \DCarbone\UglyQueueManager::addQueue
+     * @covers \DCarbone\UglyQueueManager::containsQueueWithName
+     * @uses \DCarbone\UglyQueueManager
+     * @uses \DCarbone\UglyQueue
+     * @return \DCarbone\UglyQueueManager
+     */
+    public function testCanInitializeManagerWithConfigAndNoObservers()
+    {
+        $config = array(
+            'queue-base-dir' => __DIR__.'/../misc/'
+        );
+
+        $manager = \DCarbone\UglyQueueManager::init($config);
+
+        $this->assertInstanceOf('\\DCarbone\\UglyQueueManager', $manager);
+
+        return $manager;
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueueManager::init
+     * @covers \DCarbone\UglyQueueManager::__construct
+     * @uses \DCarbone\UglyQueueManager
+     * @expectedException \RuntimeException
+     */
+    public function testExceptionThrownDuringConstructionWithInvalidBasePathValue()
+    {
+        $config = array(
+            'queue-base-dir' => 'i do not exist!'
+        );
+
+        $manager = \DCarbone\UglyQueueManager::init($config);
+    }
+
+    /**
+     * @covers \DCarbone\UglyQueueManager::init
+     * @covers \DCarbone\UglyQueueManager::__construct
+     * @uses \DCarbone\UglyQueueManager
+     * @expectedException \InvalidArgumentException
+     */
+    public function testExceptionThrownDuringConstructionWithInvalidConfArray()
+    {
+        $config = array(
+            'wrong-key' => 'wrong value'
+        );
+
+        $manager = \DCarbone\UglyQueueManager::init($config);
+    }
+
 //    /**
 //     * @covers \DCarbone\UglyQueue::queueExists
 //     * @uses \DCarbone\UglyQueue
