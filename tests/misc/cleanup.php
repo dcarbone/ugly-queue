@@ -1,13 +1,22 @@
 <?php
 
-if (is_dir(__DIR__.'/tasty-sandwich'))
+if (is_dir(__DIR__.'/queues/'))
 {
-    foreach(glob(__DIR__.'/tasty-sandwich/*') as $file)
+    foreach(glob(__DIR__.'/queues/*', GLOB_ONLYDIR) as $queueDir)
     {
-        if (substr($file, -1) === '.')
-            continue;
+        foreach(glob($queueDir.'/*') as $file)
+        {
+            $split = preg_split('#[/\\\]+#', $file);
+            if (strpos(end($split), '.') === 0)
+                continue;
 
-        unlink($file);
+            unlink($file);
+        }
+
+        rmdir($queueDir);
     }
-    rmdir(__DIR__.'/tasty-sandwich');
+}
+else
+{
+    mkdir(__DIR__.'/queues');
 }

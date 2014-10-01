@@ -33,7 +33,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeUglyQueueWithValidConfigArrayAndNoObservers()
     {
-        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/tasty-sandwich');
+        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/queues/tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
 
@@ -170,7 +170,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeExistingQueue()
     {
-        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/tasty-sandwich');
+        $uglyQueue = \DCarbone\UglyQueue::queueWithDirectoryPathAndObservers(dirname(__DIR__).'/misc/queues/tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
 

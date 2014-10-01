@@ -84,12 +84,12 @@ class UglyQueueManager implements \SplObserver, \SplSubject
     /**
      * @param UglyQueue $uglyQueue
      * @return \DCarbone\UglyQueueManager
-     * @throws \InvalidArgumentException
+     * @throws \RuntimeException
      */
     public function addQueue(UglyQueue $uglyQueue)
     {
         if ($this->containsQueueWithName($uglyQueue->name))
-            throw new \InvalidArgumentException('Queue named "'.$uglyQueue->name.'" already exists in this manager.');
+            throw new \RuntimeException('Queue named "'.$uglyQueue->name.'" already exists in this manager.');
 
         $this->queues[$uglyQueue->name] = $uglyQueue;
 
