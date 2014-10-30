@@ -10,16 +10,8 @@ use DCarbone\Helpers\FileHelper;
  * @property string path
  * @property bool locked
  */
-class UglyQueue implements \Serializable, \SplSubject
+class UglyQueue implements \Serializable, \SplSubject, \Countable
 {
-    const NOTIFY_QUEUE_INITIALIZED              = 0;
-    const NOTIFY_QUEUE_LOCKED                   = 1;
-    const NOTIFY_QUEUE_FAILED_TO_LOCK           = 2;
-    const NOTIFY_QUEUE_LOCKED_BY_OTHER_PROCESS  = 3;
-    const NOTIFY_QUEUE_UNLOCKED                 = 4;
-    const NOTIFY_QUEUE_PROCESSING               = 5;
-    const NOTIFY_QUEUE_REACHED_END              = 6;
-
     /** @var int */
     public $notifyStatus;
 
@@ -109,7 +101,7 @@ HTML;
             file_put_contents($uglyQueue->_path.'queue.txt', '');
         }
 
-        $uglyQueue->notifyStatus = self::NOTIFY_QUEUE_INITIALIZED;
+        $uglyQueue->notifyStatus = UglyQueueEnum::QUEUE_INITIALIZED;
         $uglyQueue->notify();
 
         return $uglyQueue;
@@ -169,7 +161,7 @@ HTML;
 
         // If we make it this far, there is already a lock in place.
         $this->_locked = false;
-        $this->notifyStatus = self::NOTIFY_QUEUE_LOCKED_BY_OTHER_PROCESS;
+        $this->notifyStatus = UglyQueueEnum::QUEUE_LOCKED_BY_OTHER_PROCESS;
         $this->notify();
 
         return false;
@@ -187,14 +179,14 @@ HTML;
 
         if ($ok !== true)
         {
-            $this->notifyStatus = self::NOTIFY_QUEUE_FAILED_TO_LOCK;
+            $this->notifyStatus = UglyQueueEnum::QUEUE_FAILED_TO_LOCK;
             $this->notify();
             return $this->_locked = false;
         }
 
         $this->_locked = true;
 
-        $this->notifyStatus = self::NOTIFY_QUEUE_LOCKED;
+        $this->notifyStatus = UglyQueueEnum::QUEUE_LOCKED;
         $this->notify();
 
         return true;
@@ -210,7 +202,7 @@ HTML;
             unlink($this->_path.'queue.lock');
             $this->_locked = false;
 
-            $this->notifyStatus = self::NOTIFY_QUEUE_UNLOCKED;
+            $this->notifyStatus = UglyQueueEnum::QUEUE_UNLOCKED;
             $this->notify();
         }
     }
@@ -270,9 +262,9 @@ HTML;
         if ($count <= 0)
             throw new \InvalidArgumentException('Argument 1 expected to be integer greater than 0, "'.$count.'" seen');
 
-        if ($this->notifyStatus !== self::NOTIFY_QUEUE_PROCESSING)
+        if ($this->notifyStatus !== UglyQueueEnum::QUEUE_PROCESSING)
         {
-            $this->notifyStatus = self::NOTIFY_QUEUE_PROCESSING;
+            $this->notifyStatus = UglyQueueEnum::QUEUE_PROCESSING;
             $this->notify();
         }
 
@@ -308,7 +300,7 @@ HTML;
             ftruncate($queueFileHandle, 0);
             fclose($queueFileHandle);
 
-            $this->notifyStatus = self::NOTIFY_QUEUE_REACHED_END;
+            $this->notifyStatus = UglyQueueEnum::QUEUE_REACHED_END;
             $this->notify();
         }
         // Otherwise, create new queue file minus the processed lines.
@@ -426,6 +418,18 @@ HTML;
 
         fclose($queueFileHandle);
         return false;
+    }
+
+    /**
+     * (PHP 5 >= 5.1.0)
+     * Count elements of an object
+     * @link http://php.net/manual/en/countable.count.php
+     *
+     * @return int The custom count as an integer.
+     */
+    public function count()
+    {
+        return $this->getQueueItemCount();
     }
 
     /**

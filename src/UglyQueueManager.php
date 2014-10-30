@@ -4,12 +4,8 @@
  * Class UglyQueueManager
  * @package DCarbone
  */
-class UglyQueueManager implements \SplObserver, \SplSubject
+class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
 {
-    const NOTIFY_MANAGER_INITIALIZED = 0;
-    const NOTIFY_QUEUE_ADDED = 1;
-    const NOTIFY_QUEUE_REMOVED = 2;
-
     /** @var int */
     public $notifyStatus;
 
@@ -75,7 +71,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
             $manager->addQueue($uglyQueue);
         }
 
-        $manager->notifyStatus = self::NOTIFY_MANAGER_INITIALIZED;
+        $manager->notifyStatus = UglyQueueEnum::MANAGER_INITIALIZED;
         $manager->notify();
 
         return $manager;
@@ -93,7 +89,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
 
         $this->queues[$uglyQueue->name] = $uglyQueue;
 
-        $this->notifyStatus = self::NOTIFY_QUEUE_ADDED;
+        $this->notifyStatus = UglyQueueEnum::QUEUE_ADDED;
         $this->notify();
 
         return $this;
@@ -131,7 +127,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject
         if ($this->containsQueueWithName($name))
         {
             unset($this->queues[$name]);
-            $this->notifyStatus = self::NOTIFY_QUEUE_REMOVED;
+            $this->notifyStatus = UglyQueueEnum::QUEUE_REMOVED;
             $this->notify();
         }
 
@@ -166,6 +162,18 @@ class UglyQueueManager implements \SplObserver, \SplSubject
     public function getQueueList()
     {
         return array_keys($this->queues);
+    }
+
+    /**
+     * (PHP 5 >= 5.1.0)
+     * Count elements of an object
+     * @link http://php.net/manual/en/countable.count.php
+     *
+     * @return int The custom count as an integer. The return value is cast to an integer.
+     */
+    public function count()
+    {
+        return count($this->queues);
     }
 
     /**
