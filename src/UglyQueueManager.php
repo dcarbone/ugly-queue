@@ -4,77 +4,38 @@
  * Class UglyQueueManager
  * @package DCarbone
  */
-class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
+class UglyQueueManager implements \SplObserver, \Countable
 {
-    /** @var int */
-    public $notifyStatus;
-
-    const UGLY_QUEUE_SERIALIZED_NAME = 'ugly-queue.obj';
-
-    /** @var array */
-    private $observers = array();
-
-    /** @var array */
+    /** @var UglyQueue[] */
     protected $queues = array();
 
-    /** @var array */
-    protected $config = array();
-
     /** @var string */
-    protected $queueBaseDir;
+    protected $baseDir;
 
     /**
      * Constructor
      *
-     * @param array $config
-     * @param array $observers
+     * @param string $baseDir
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    protected function __construct(array $config, array $observers = array())
+    public function __construct($baseDir)
     {
-        if (!isset($config['queue-base-dir']))
-            throw new \InvalidArgumentException('"$config" parameter "queue-base-dir" not seen.');
+        if (false === is_string($baseDir))
+            throw new \InvalidArgumentException('Argument 1 expected to be string, "'.gettype($baseDir).'" seen.');
 
-        if (!is_dir($config['queue-base-dir']))
-            throw new \RuntimeException('"queue-base-dir" points to a directory that does not exist.');
+        if (false === is_dir($baseDir))
+            throw new \RuntimeException('"'.$baseDir.'" points to a directory that does not exist.');
 
-        $this->config = $config;
-        $this->queueBaseDir =  rtrim(realpath($this->config['queue-base-dir']), "/\\").DIRECTORY_SEPARATOR;
-        $this->observers = $observers;
-    }
+        if (false === is_readable($baseDir))
+            throw new \RuntimeException('"'.$baseDir.'" is not readable and/or writable .');
 
-    /**
-     * @param array $config
-     * @param array $observers
-     * @return UglyQueueManager
-     */
-    public static function init(array $config, array $observers = array())
-    {
-        /** @var \DCarbone\UglyQueueManager $manager */
-        $manager = new static($config, $observers);
+        $this->baseDir =  rtrim($baseDir, "/\\");
 
-        /** @var \DCarbone\UglyQueue $uglyQueue */
-
-        foreach(glob($manager->queueBaseDir.DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR) as $queueDir)
+        foreach(glob(sprintf('%s/*', $this->baseDir), GLOB_ONLYDIR) as $queueDir)
         {
-            // Try to avoid looking at hidden directories or magic dirs such as '.' and '..'
-            $split = preg_split('#[/\\\]+#', $queueDir);
-            if (strpos(end($split), '.') === 0)
-                continue;
-
-            if (file_exists($queueDir.DIRECTORY_SEPARATOR.self::UGLY_QUEUE_SERIALIZED_NAME))
-                $uglyQueue = unserialize(file_get_contents($queueDir.DIRECTORY_SEPARATOR.self::UGLY_QUEUE_SERIALIZED_NAME));
-            else
-                $uglyQueue = UglyQueue::queueWithDirectoryPathAndObservers($queueDir, $manager->observers);
-
-            $manager->addQueue($uglyQueue);
+            $this->addQueueAtPath($queueDir);
         }
-
-        $manager->notifyStatus = UglyQueueEnum::MANAGER_INITIALIZED;
-        $manager->notify();
-
-        return $manager;
     }
 
     /**
@@ -84,24 +45,45 @@ class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
      */
     public function addQueue(UglyQueue $uglyQueue)
     {
-        if ($this->containsQueueWithName($uglyQueue->name))
-            throw new \RuntimeException('Queue named "'.$uglyQueue->name.'" already exists in this manager.');
+        $name = $uglyQueue->getName();
 
-        $this->queues[$uglyQueue->name] = $uglyQueue;
+        if ($this->containsQueueWithName($name))
+            throw new \RuntimeException('Queue named "'.$name.'" already exists in this manager.');
 
-        $this->notifyStatus = UglyQueueEnum::QUEUE_ADDED;
-        $this->notify();
+        $this->queues[$name] = $uglyQueue;
 
         return $this;
     }
 
     /**
-     * @param $path
+     * @param string $name
+     * @return UglyQueue
+     */
+    public function createQueue($name)
+    {
+        $this->addQueue(new UglyQueue($this->baseDir, $name, array($this)));
+        return end($this->queues);
+    }
+
+    /**
+     * @param string $path
      * @return \DCarbone\UglyQueueManager
      */
     public function addQueueAtPath($path)
     {
-        $uglyQueue = UglyQueue::queueWithDirectoryPathAndObservers($path, $this->observers);
+        // Try to avoid looking at hidden directories or magic dirs such as '.' and '..'
+        $split = preg_split('#[/\\\]+#', $path);
+
+        $queueName = end($split);
+
+        if (0 === strpos($queueName, '.'))
+            return null;
+
+        $serializedFile = sprintf('%s/%s/ugly-queue.obj', $this->baseDir, $queueName);
+        if (file_exists($serializedFile))
+            $uglyQueue = unserialize(file_get_contents($serializedFile));
+        else
+            $uglyQueue = new UglyQueue($this->baseDir, $queueName, array($this));
 
         return $this->addQueue($uglyQueue);
     }
@@ -112,8 +94,9 @@ class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
      */
     public function removeQueue(UglyQueue $uglyQueue)
     {
-        if ($this->containsQueueWithName($uglyQueue->name))
-            unset($this->queues[$uglyQueue->name]);
+        $name = $uglyQueue->getName();
+        if ($this->containsQueueWithName($name))
+            unset($this->queues[$name]);
 
         return $this;
     }
@@ -125,11 +108,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
     public function removeQueueByName($name)
     {
         if ($this->containsQueueWithName($name))
-        {
             unset($this->queues[$name]);
-            $this->notifyStatus = UglyQueueEnum::QUEUE_REMOVED;
-            $this->notify();
-        }
 
         return $this;
     }
@@ -139,7 +118,7 @@ class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
      * @return \DCarbone\UglyQueue
      * @throws \InvalidArgumentException
      */
-    public function &getQueueWithName($name)
+    public function getQueueWithName($name)
     {
         if (isset($this->queues[$name]))
             return $this->queues[$name];
@@ -186,53 +165,6 @@ class UglyQueueManager implements \SplObserver, \SplSubject, \Countable
      */
     public function update(\SplSubject $subject)
     {
-        for ($i = 0, $count = count($this->observers); $i < $count; $i++)
-        {
-            $this->observers[$i]->notify($subject);
-        }
-    }
-
-    /**
-     * (PHP 5 >= 5.1.0)
-     * Attach an SplObserver
-     * @link http://php.net/manual/en/splsubject.attach.php
-     *
-     * @param \SplObserver $observer The SplObserver to attach.
-     * @return void
-     */
-    public function attach(\SplObserver $observer)
-    {
-        if (!in_array($observer, $this->observers, true))
-            $this->observers[] = $observer;
-    }
-
-    /**
-     * (PHP 5 >= 5.1.0)
-     * Detach an observer
-     * @link http://php.net/manual/en/splsubject.detach.php
-     *
-     * @param \SplObserver $observer The SplObserver to detach.
-     * @return void
-     */
-    public function detach(\SplObserver $observer)
-    {
-        $idx = array_search($observer, $this->observers, true);
-        if ($idx !== false)
-            unset($this->observers[$idx]);
-    }
-
-    /**
-     * (PHP 5 >= 5.1.0)
-     * Notify an observer
-     * @link http://php.net/manual/en/splsubject.notify.php
-     *
-     * @return void
-     */
-    public function notify()
-    {
-        for ($i = 0, $count = count($this->observers); $i < $count; $i++)
-        {
-            $this->observers[$i]->notify($this);
-        }
+        // Nothing for now...
     }
 }

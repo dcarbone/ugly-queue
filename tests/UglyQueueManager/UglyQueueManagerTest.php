@@ -5,30 +5,31 @@
  */
 class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
 {
+    protected $baseDir;
+
     protected $reallyTastySandwich = array(
         '0' => 'beef broth',
         '1' => 'barbeque sauce',
         '2' => 'boneless pork ribs',
     );
 
+    protected function setUp()
+    {
+        $this->baseDir = __DIR__.'/../misc/queues';
+    }
+
     /**
      * @covers \DCarbone\UglyQueueManager::__construct
-     * @covers \DCarbone\UglyQueueManager::init
      * @covers \DCarbone\UglyQueue::unserialize
-     * @covers \DCarbone\UglyQueue::__get
      * @covers \DCarbone\UglyQueueManager::addQueue
      * @covers \DCarbone\UglyQueueManager::containsQueueWithName
      * @uses \DCarbone\UglyQueueManager
      * @uses \DCarbone\UglyQueue
      * @return \DCarbone\UglyQueueManager
      */
-    public function testCanInitializeManagerWithConfigAndNoObservers()
+    public function testCanInitializeObjectWithValidPath()
     {
-        $config = array(
-            'queue-base-dir' => __DIR__.'/../misc/queues'
-        );
-
-        $manager = \DCarbone\UglyQueueManager::init($config);
+        $manager = new \DCarbone\UglyQueueManager($this->baseDir);
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueueManager', $manager);
 
@@ -36,39 +37,20 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \DCarbone\UglyQueueManager::init
      * @covers \DCarbone\UglyQueueManager::__construct
      * @uses \DCarbone\UglyQueueManager
      * @expectedException \RuntimeException
      */
     public function testExceptionThrownDuringConstructionWithInvalidBasePathValue()
     {
-        $config = array(
-            'queue-base-dir' => 'i do not exist!'
-        );
-
-        $manager = \DCarbone\UglyQueueManager::init($config);
+        new \DCarbone\UglyQueueManager('i do not exist!');
     }
 
-    /**
-     * @covers \DCarbone\UglyQueueManager::init
-     * @covers \DCarbone\UglyQueueManager::__construct
-     * @uses \DCarbone\UglyQueueManager
-     * @expectedException \InvalidArgumentException
-     */
-    public function testExceptionThrownDuringConstructionWithInvalidConfArray()
-    {
-        $config = array(
-            'wrong-key' => 'wrong value'
-        );
-
-        $manager = \DCarbone\UglyQueueManager::init($config);
-    }
 
     /**
      * @covers \DCarbone\UglyQueueManager::containsQueueWithName
      * @uses \DCarbone\UglyQueueManager
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanDetermineIfValidQueueExistsInManager(\DCarbone\UglyQueueManager $manager)
@@ -81,7 +63,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueueManager::containsQueueWithName
      * @uses \DCarbone\UglyQueueManager
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanDetermineQueueDoesNotExistInManager(\DCarbone\UglyQueueManager $manager)
@@ -93,10 +75,9 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
 
     /**
      * @covers \DCarbone\UglyQueueManager::getQueueWithName
-     * @covers \DCarbone\UglyQueue::__get
      * @uses \DCarbone\UglyQueueManager
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanGetUglyQueueObjectFromManager(\DCarbone\UglyQueueManager $manager)
@@ -104,25 +85,25 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
         $uglyQueue = $manager->getQueueWithName('tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
-        $this->assertEquals('tasty-sandwich', $uglyQueue->name);
+        $this->assertEquals('tasty-sandwich', $uglyQueue->getName());
     }
 
     /**
      * @covers \DCarbone\UglyQueueManager::getQueueWithName
      * @uses \DCarbone\UglyQueueManager
      * @expectedException \InvalidArgumentException
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testExceptionThrownWhenTryingToGetNonExistentQueueFromManager(\DCarbone\UglyQueueManager $manager)
     {
-        $shouldNotExist = $manager->getQueueWithName('sandwiches');
+        $manager->getQueueWithName('sandwiches');
     }
 
     /**
      * @covers \DCarbone\UglyQueueManager::getQueueList
      * @uses \DCarbone\UglyQueueManager
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanGetListOfQueuesInManager(\DCarbone\UglyQueueManager $manager)
@@ -140,7 +121,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
      * @uses \DCarbone\UglyQueueManager
      * @uses \DCarbone\UglyQueue
      * @expectedException \RuntimeException
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testExceptionThrownWhenReAddingQueueToManager(\DCarbone\UglyQueueManager $manager)
@@ -156,7 +137,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
      * @covers \DCarbone\UglyQueueManager::getQueueWithName
      * @uses \DCarbone\UglyQueueManager
      * @uses \DCarbone\UglyQueue
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanInitializeNewQueueAndAddToManager(\DCarbone\UglyQueueManager $manager)
@@ -166,7 +147,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
         $uglyQueue = $manager->getQueueWithName('really-tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
-        $this->assertEquals('really-tasty-sandwich', $uglyQueue->name);
+        $this->assertEquals('really-tasty-sandwich', $uglyQueue->getName());
 
         $queueList = $manager->getQueueList();
 
@@ -178,7 +159,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueueManager::removeQueueByName
      * @uses \DCarbone\UglyQueueManager
-     * @depends testCanInitializeManagerWithConfigAndNoObservers
+     * @depends testCanInitializeObjectWithValidPath
      * @param \DCarbone\UglyQueueManager $manager
      */
     public function testCanRemoveQueueFromManagerByName(\DCarbone\UglyQueueManager $manager)
