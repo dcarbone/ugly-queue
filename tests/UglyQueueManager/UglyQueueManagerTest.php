@@ -15,7 +15,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->baseDir = __DIR__.'/../misc/queues';
+        $this->baseDir = realpath(__DIR__.'/../misc/queues');
     }
 
     /**
@@ -142,7 +142,7 @@ class UglyQueueManagerTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeNewQueueAndAddToManager(\DCarbone\UglyQueueManager $manager)
     {
-        $manager->addQueueAtPath(__DIR__.'/../misc/queues/really-tasty-sandwich');
+        $manager->addQueueAtPath($this->baseDir.'/really-tasty-sandwich');
 
         $uglyQueue = $manager->getQueueWithName('really-tasty-sandwich');
 

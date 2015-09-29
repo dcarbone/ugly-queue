@@ -46,23 +46,23 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
 
     /**
      * @param string $baseDir
-     * @param string $queueName
+     * @param string $name
      * @param \SplObserver[] $observers
      */
-    public function __construct($baseDir, $queueName, array $observers = array())
+    public function __construct($baseDir, $name, array $observers = array())
     {
         $this->baseDir = trim($baseDir, "/\\");
-        $this->name = $queueName;
+        $this->name = $name;
         $this->_observers = $observers;
 
-        $path = sprintf('%s/%s', $baseDir, $queueName);
+        $path = sprintf('%s/%s', $baseDir, $name);
         if (!file_exists($path) && !@mkdir($path))
             throw new \RuntimeException('Unable to initialize queue directory "'.$path.'".  Please check permissions.');
 
         $this->path = $path;
-        $this->lockFile = sprintf('%s/queue.lock', $this->path);
-        $this->queueFile = sprintf('%s/queue.txt', $this->path);
-        $this->queueTmpFile = sprintf('%s/queue.tmp', $this->path);
+        $this->lockFile = sprintf('%s/queue.lock', $path);
+        $this->queueFile = sprintf('%s/queue.txt', $path);
+        $this->queueTmpFile = sprintf('%s/queue.tmp', $path);
 
         $this->_initialize();
     }
@@ -77,7 +77,7 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
         else if (is_readable($this->path))
             $this->mode = self::QUEUE_READONLY;
 
-        if (!file_exists($this->path.'index.html'))
+        if (!file_exists($this->path.'/index.html'))
         {
             if ($this->mode === self::QUEUE_READONLY)
                 throw new \RuntimeException('Cannot initialize queue with name "'.$this->name.'", the user lacks permission to create files.');
@@ -92,7 +92,7 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
 </body>
 </html>
 HTML;
-            file_put_contents($this->path.'index.html', $html);
+            file_put_contents($this->path.'/index.html', $html);
         }
 
         if (!file_exists($this->queueFile))
@@ -301,7 +301,7 @@ HTML;
         }
 
         // Find number of lines in the queue file
-        $lineCount  = FileHelper::getLineCount($this->queueFile);
+        $lineCount  = count($this);
 
         // If queue line count is 0, assume empty
         if ($lineCount === 0)
@@ -450,6 +450,7 @@ HTML;
      */
     public function count()
     {
+        var_dump($this->queueFile);
         return (int)FileHelper::getLineCount($this->queueFile);
     }
 

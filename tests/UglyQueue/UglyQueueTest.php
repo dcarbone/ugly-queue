@@ -30,7 +30,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->baseDir = __DIR__.'/../misc/queues';
+        $this->baseDir = realpath(__DIR__.'/../misc/queues');
     }
 
     /**
@@ -40,6 +40,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeObjectWithValidParameters()
     {
+        echo __FUNCTION__."\n";
         $uglyQueue = new \DCarbone\UglyQueue($this->baseDir, 'tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
@@ -56,6 +57,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenTryingToProcessQueueAfterInitializationBeforeLock(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->retrieveItems();
     }
 
@@ -67,6 +69,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testKeyExistsInQueueReturnsFalseWithEmptyQueueAfterInitialization(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $exists = $uglyQueue->keyExistsInQueue(0);
 
         $this->assertFalse($exists);
@@ -92,6 +95,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanGetQueueDirectory(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $queuePath = $uglyQueue->getPath();
 
         $this->assertFileExists($queuePath);
@@ -105,6 +109,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanGetQueueName(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $queueName = $uglyQueue->getName();
 
         $this->assertEquals('tasty-sandwich', $queueName);
@@ -118,6 +123,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanGetQueueLockedStatus(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $locked = $uglyQueue->isLocked();
 
         $this->assertFalse($locked);
@@ -131,6 +137,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testGetQueueItemCountReturnsZeroWithEmptyQueue(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $itemCount = count($uglyQueue);
         $this->assertEquals(0, $itemCount);
     }
@@ -142,6 +149,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeExistingQueue()
     {
+        echo __FUNCTION__."\n";
         $uglyQueue = new \DCarbone\UglyQueue($this->baseDir, 'tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
@@ -158,6 +166,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenPassingNonIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->lock('7 billion');
     }
 
@@ -170,6 +179,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenPassingNegativeIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->lock(-73);
     }
 
@@ -184,6 +194,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanLockUglyQueueWithDefaultTTL(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $locked = $uglyQueue->lock();
 
         $this->assertTrue($locked);
@@ -209,6 +220,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCannotLockQueueThatIsAlreadyLocked(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $lock = $uglyQueue->lock();
 
         $this->assertFalse($lock);
@@ -222,6 +234,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testIsLockedReturnsTrueAfterLocking(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $isLocked = $uglyQueue->isLocked();
         $this->assertTrue($isLocked);
     }
@@ -236,6 +249,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanUnlockLockedQueue(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->unlock();
 
         $this->assertFileNotExists($uglyQueue->getLockFile());
@@ -251,6 +265,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testIsLockedReturnsFalseAfterUnlockingQueue(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $isLocked = $uglyQueue->isLocked();
 
         $this->assertFalse($isLocked);
@@ -266,6 +281,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testIsLockedReturnsFalseWithStaleQueueLockFile(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->lock(2);
         $isLocked = $uglyQueue->isLocked();
         $this->assertTrue($isLocked);
@@ -279,7 +295,6 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     /**
      * @covers \DCarbone\UglyQueue::lock
      * @covers \DCarbone\UglyQueue::isLocked
-     * @covers \DCarbone\UglyQueue::__get
      * @uses \DCarbone\UglyQueue
      * @depends testCanUnlockLockedQueue
      * @param \DCarbone\UglyQueue $uglyQueue
@@ -287,6 +302,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanLockQueueWithValidIntegerValue(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $locked = $uglyQueue->lock(200);
 
         $this->assertTrue($locked);
@@ -313,6 +329,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanPopulateQueueTempFileAfterInitializationAndAcquiringLock(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         foreach(array_reverse($this->tastySandwich, true) as $k=>$v)
         {
             $added = $uglyQueue->addItem($k, $v);
@@ -339,6 +356,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanForciblyUpdateQueueFileFromTempFile(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->_populateQueue();
 
         $this->assertFileNotExists($uglyQueue->getQueueTmpFile());
@@ -370,6 +388,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testKeyExistsReturnsTrueWithPopulatedQueue(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $exists = $uglyQueue->keyExistsInQueue(5);
 
         $this->assertTrue($exists);
@@ -384,6 +403,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenTryingToProcessLockedQueueWithNonInteger(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->retrieveItems('Eleventy Billion');
     }
 
@@ -396,6 +416,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenTryingToProcessLockedQueueWithIntegerLessThan1(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $uglyQueue->retrieveItems(0);
     }
 
@@ -410,6 +431,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanGetPartialQueueContents(\DCarbone\UglyQueue $uglyQueue)
     {
+        echo __FUNCTION__."\n";
         $process = $uglyQueue->retrieveItems(5);
 
         $this->assertEquals(5, count($process));
