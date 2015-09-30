@@ -39,6 +39,22 @@ class UglyQueueManager implements \SplObserver, \Countable
     }
 
     /**
+     * @param string $name
+     * @return UglyQueue|UglyQueueManager
+     */
+    public function getQueue($name)
+    {
+        if (isset($this->queues[$name]))
+            return $this->queues[$name];
+
+        $path = sprintf('%s/%s', $this->baseDir, $name);
+        if (file_exists($path))
+            return $this->addQueueAtPath($path);
+
+        return $this->createQueue($name);
+    }
+
+    /**
      * @param UglyQueue $uglyQueue
      * @return \DCarbone\UglyQueueManager
      * @throws \RuntimeException
@@ -61,7 +77,8 @@ class UglyQueueManager implements \SplObserver, \Countable
      */
     public function createQueue($name)
     {
-        $this->addQueue(new UglyQueue($this->baseDir, $name, array($this)));
+        $queue = new UglyQueue($this->baseDir, $name, array($this));
+        $this->addQueue($queue);
         return end($this->queues);
     }
 
@@ -80,10 +97,14 @@ class UglyQueueManager implements \SplObserver, \Countable
             return null;
 
         $serializedFile = sprintf('%s/%s/ugly-queue.obj', $this->baseDir, $queueName);
+        /** @var \DCarbone\UglyQueue $uglyQueue */
         if (file_exists($serializedFile))
             $uglyQueue = unserialize(file_get_contents($serializedFile));
-        else
+
+        if (!isset($uglyQueue) || $uglyQueue->_valid() === false)
             $uglyQueue = new UglyQueue($this->baseDir, $queueName, array($this));
+
+        $uglyQueue->attach($this);
 
         return $this->addQueue($uglyQueue);
     }

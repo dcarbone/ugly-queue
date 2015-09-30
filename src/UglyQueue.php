@@ -68,39 +68,7 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
         $this->queueTmpFile = sprintf('%s%squeue.tmp', $path, DIRECTORY_SEPARATOR);
         $this->serializeFile = sprintf('%s%sugly-queue.obj', $path, DIRECTORY_SEPARATOR);
 
-        if (is_readable($this->path) && is_writable($this->path))
-            $this->mode = self::QUEUE_READWRITE;
-        else if (is_readable($this->path))
-            $this->mode = self::QUEUE_READONLY;
-
-        if (!file_exists($this->path.'/index.html'))
-        {
-            if ($this->mode === self::QUEUE_READONLY)
-                throw new \RuntimeException('Cannot initialize queue with name "'.$this->name.'", the user lacks permission to create files.');
-
-            $html = <<<HTML
-<html>
-<head>
-	<title>403 Forbidden</title>
-</head>
-<body>
-<p>Directory access is forbidden.</p>
-</body>
-</html>
-HTML;
-            file_put_contents($this->path.'/index.html', $html);
-        }
-
-        if (!file_exists($this->queueFile))
-        {
-            if ($this->mode === self::QUEUE_READONLY)
-                throw new \RuntimeException('Cannot initialize queue with name "'.$this->name.'", the user lacks permission to create files.');
-
-            file_put_contents($this->queueFile, '');
-        }
-
-        $this->_notifyStatus = UglyQueueEnum::QUEUE_INITIALIZED;
-        $this->notify();
+        $this->initialize();
     }
 
     /**
@@ -178,6 +146,14 @@ HTML;
     }
 
     /**
+     * @return boolean
+     */
+    public function isLocked()
+    {
+        return $this->locked;
+    }
+
+    /**
      * @param int $ttl Time to live in seconds
      * @throws \InvalidArgumentException
      * @return bool
@@ -190,10 +166,8 @@ HTML;
         if ($ttl < 1)
             throw new \InvalidArgumentException('Argument 1 expected to be greater than 0 "'.$ttl.'" seen');
 
-        $alreadyLocked = $this->isLocked();
-
         // If there is currently no lock
-        if ($alreadyLocked === false)
+        if ($this->isAlreadyLocked() === false)
             return $this->createLockFile($ttl);
 
         // If we make it this far, there is already a lock in place.
@@ -209,7 +183,7 @@ HTML;
      */
     public function unlock()
     {
-        if ($this->locked === true)
+        if ($this->isLocked() === true)
         {
             unlink($this->lockFile);
             $this->locked = false;
@@ -223,7 +197,7 @@ HTML;
      * @throws \RuntimeException
      * @return bool
      */
-    public function isLocked()
+    public function isAlreadyLocked()
     {
         // First check for lock file
         if (is_file($this->lockFile))
@@ -300,7 +274,7 @@ HTML;
             if ($i++ >= $start_line)
             {
                 list ($key, $value) = $line;
-                $data[$key] = $value;
+                $data = array($key => $value) + $data;
             }
         }
 
@@ -349,7 +323,7 @@ HTML;
             throw new \RuntimeException('Cannot add item to queue "'.$this->name.'" as it is in read-only mode');
 
         // If we don't have a lock, assume issue and move on.
-        if ($this->locked === false)
+        if ($this->isLocked() === false)
             throw new \RuntimeException('Cannot add item to queue "'.$this->name.'". Queue is already locked by another process');
 
         if (!is_resource($this->tmpHandle))
@@ -366,6 +340,17 @@ HTML;
             $this->tmpHandle,
             $key."\t".str_replace(array("\r\n", "\n"), ' ', $value)
             ."\n");
+    }
+
+    /**
+     * @param array $items
+     */
+    public function addItems(array $items)
+    {
+        foreach($items as $k=>$v)
+        {
+            $this->addItem($k, $v);
+        }
     }
 
     /**
@@ -441,7 +426,17 @@ HTML;
      */
     public function serialize()
     {
-        return serialize(array($this->name, $this->path));
+        return serialize(
+            array(
+                $this->baseDir,
+                $this->name,
+                $this->path,
+                $this->queueFile,
+                $this->queueTmpFile,
+                $this->lockFile,
+                $this->serializeFile,
+            )
+        );
     }
 
     /**
@@ -454,10 +449,15 @@ HTML;
      */
     public function unserialize($serialized)
     {
-        /** @var \DCarbone\UglyQueue $uglyQueue */
         $data = unserialize($serialized);
-        $this->name = $data[0];
-        $this->path = $data[1];
+        $this->baseDir = $data[0];
+        $this->name = $data[1];
+        $this->path = $data[2];
+        $this->queueFile = $data[3];
+        $this->queueTmpFile = $data[4];
+        $this->lockFile = $data[5];
+        $this->serializeFile = $data[6];
+        $this->initialize();
     }
 
     /**
@@ -504,6 +504,26 @@ HTML;
         }
     }
 
+    /**
+     * This method is mostly intended to check the "validity" of a re-initialized queue
+     *
+     * Could probably stand to be improved.
+     *
+     * @return bool
+     */
+    public function _valid()
+    {
+        return (
+            $this->baseDir !== null &&
+            $this->name !== null &&
+            $this->path !== null &&
+            $this->queueFile !== null &&
+            $this->queueTmpFile !== null &&
+            $this->lockFile !== null &&
+            $this->serializeFile !== null
+        );
+    }
+
     // --------
 
     /**
@@ -524,10 +544,51 @@ HTML;
         }
 
         $this->locked = true;
-
         $this->_notifyStatus = UglyQueueEnum::QUEUE_LOCKED;
         $this->notify();
 
         return true;
+    }
+
+    /**
+     * Post-construct initialization method.
+     *
+     * Also used post-un-serialization
+     */
+    protected function initialize()
+    {
+        if (is_readable($this->path) && is_writable($this->path))
+            $this->mode = self::QUEUE_READWRITE;
+        else if (is_readable($this->path))
+            $this->mode = self::QUEUE_READONLY;
+
+        if (!file_exists($this->path.'/index.html'))
+        {
+            if ($this->mode === self::QUEUE_READONLY)
+                throw new \RuntimeException('Cannot initialize queue with name "'.$this->name.'", the user lacks permission to create files.');
+
+            $html = <<<HTML
+<html>
+<head>
+	<title>403 Forbidden</title>
+</head>
+<body>
+    <p>Directory access is forbidden.</p>
+</body>
+</html>
+HTML;
+            file_put_contents($this->path.'/index.html', $html);
+        }
+
+        if (!file_exists($this->queueFile))
+        {
+            if ($this->mode === self::QUEUE_READONLY)
+                throw new \RuntimeException('Cannot initialize queue with name "'.$this->name.'", the user lacks permission to create files.');
+
+            file_put_contents($this->queueFile, '');
+        }
+
+        $this->_notifyStatus = UglyQueueEnum::QUEUE_INITIALIZED;
+        $this->notify();
     }
 }

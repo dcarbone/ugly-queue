@@ -209,14 +209,14 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanInitializeObjectWithValidParameters
      * @param \DCarbone\UglyQueue $uglyQueue
      */
     public function testCanGetQueueLockedStatus(\DCarbone\UglyQueue $uglyQueue)
     {
-        $locked = $uglyQueue->isLocked();
+        $locked = $uglyQueue->isAlreadyLocked();
         $this->assertFalse($locked);
     }
 
@@ -239,7 +239,6 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanInitializeExistingQueue()
     {
-        
         $uglyQueue = new \DCarbone\UglyQueue($this->baseDir, 'tasty-sandwich');
 
         $this->assertInstanceOf('\\DCarbone\\UglyQueue', $uglyQueue);
@@ -256,7 +255,6 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenPassingNonIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
     {
-        
         $uglyQueue->lock('7 billion');
     }
 
@@ -269,13 +267,12 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testExceptionThrownWhenPassingNegativeIntegerValueToLock(\DCarbone\UglyQueue $uglyQueue)
     {
-        
         $uglyQueue->lock(-73);
     }
 
     /**
      * @covers \DCarbone\UglyQueue::lock
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @covers \DCarbone\UglyQueue::createLockFile
      * @uses \DCarbone\UglyQueue
      * @depends testCanInitializeObjectWithValidParameters
@@ -284,7 +281,6 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
      */
     public function testCanLockUglyQueueWithDefaultTTL(\DCarbone\UglyQueue $uglyQueue)
     {
-        
         $locked = $uglyQueue->lock();
 
         $this->assertTrue($locked);
@@ -303,7 +299,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
 
     /**
      * @covers \DCarbone\UglyQueue::lock
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanInitializeExistingQueue
      * @param \DCarbone\UglyQueue $uglyQueue
@@ -317,7 +313,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanLockUglyQueueWithDefaultTTL
      * @param \DCarbone\UglyQueue $uglyQueue
@@ -325,7 +321,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     public function testIsLockedReturnsTrueAfterLocking(\DCarbone\UglyQueue $uglyQueue)
     {
         
-        $isLocked = $uglyQueue->isLocked();
+        $isLocked = $uglyQueue->isAlreadyLocked();
         $this->assertTrue($isLocked);
     }
 
@@ -348,7 +344,7 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanUnlockLockedQueue
      * @param \DCarbone\UglyQueue $uglyQueue
@@ -356,14 +352,14 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     public function testIsLockedReturnsFalseAfterUnlockingQueue(\DCarbone\UglyQueue $uglyQueue)
     {
         
-        $isLocked = $uglyQueue->isLocked();
+        $isLocked = $uglyQueue->isAlreadyLocked();
 
         $this->assertFalse($isLocked);
     }
 
     /**
      * @covers \DCarbone\UglyQueue::lock
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @uses \DCarbone\Helpers\FileHelper
      * @depends testCanUnlockLockedQueue
@@ -373,18 +369,18 @@ class UglyQueueTest extends PHPUnit_Framework_TestCase
     {
         
         $uglyQueue->lock(2);
-        $isLocked = $uglyQueue->isLocked();
+        $isLocked = $uglyQueue->isAlreadyLocked();
         $this->assertTrue($isLocked);
 
         sleep(3);
 
-        $isLocked = $uglyQueue->isLocked();
+        $isLocked = $uglyQueue->isAlreadyLocked();
         $this->assertFalse($isLocked);
     }
 
     /**
      * @covers \DCarbone\UglyQueue::lock
-     * @covers \DCarbone\UglyQueue::isLocked
+     * @covers \DCarbone\isAlreadyLocked::isAlreadyLocked
      * @uses \DCarbone\UglyQueue
      * @depends testCanUnlockLockedQueue
      * @param \DCarbone\UglyQueue $uglyQueue
