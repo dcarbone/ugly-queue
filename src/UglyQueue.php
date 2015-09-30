@@ -44,6 +44,9 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
     /** @var string */
     protected $lockFile;
 
+    /** @var string */
+    protected $serializeFile;
+
     /**
      * @param string $baseDir
      * @param string $name
@@ -51,27 +54,20 @@ class UglyQueue implements \Serializable, \SplSubject, \Countable
      */
     public function __construct($baseDir, $name, array $observers = array())
     {
-        $this->baseDir = trim($baseDir, "/\\");
+        $this->baseDir = realpath($baseDir);
         $this->name = $name;
         $this->_observers = $observers;
 
-        $path = sprintf('%s/%s', $baseDir, $name);
+        $path = sprintf('%s%s%s', $baseDir, DIRECTORY_SEPARATOR, $name);
         if (!file_exists($path) && !@mkdir($path))
             throw new \RuntimeException('Unable to initialize queue directory "'.$path.'".  Please check permissions.');
 
         $this->path = $path;
-        $this->lockFile = sprintf('%s/queue.lock', $path);
-        $this->queueFile = sprintf('%s/queue.txt', $path);
-        $this->queueTmpFile = sprintf('%s/queue.tmp', $path);
+        $this->lockFile = sprintf('%s%squeue.lock', $path, DIRECTORY_SEPARATOR);
+        $this->queueFile = sprintf('%s%squeue.txt', $path, DIRECTORY_SEPARATOR);
+        $this->queueTmpFile = sprintf('%s%squeue.tmp', $path, DIRECTORY_SEPARATOR);
+        $this->serializeFile = sprintf('%s%sugly-queue.obj', $path, DIRECTORY_SEPARATOR);
 
-        $this->_initialize();
-    }
-
-    /**
-     * Initialize queue if needed.
-     */
-    private function _initialize()
-    {
         if (is_readable($this->path) && is_writable($this->path))
             $this->mode = self::QUEUE_READWRITE;
         else if (is_readable($this->path))
@@ -174,6 +170,14 @@ HTML;
     }
 
     /**
+     * @return string
+     */
+    public function getSerializeFile()
+    {
+        return $this->serializeFile;
+    }
+
+    /**
      * @param int $ttl Time to live in seconds
      * @throws \InvalidArgumentException
      * @return bool
@@ -198,31 +202,6 @@ HTML;
         $this->notify();
 
         return false;
-    }
-
-    /**
-     * @param int $ttl seconds to live
-     * @return bool
-     */
-    protected function createLockFile($ttl)
-    {
-        $ok = (bool)@file_put_contents(
-            $this->lockFile,
-            json_encode(array('ttl' => $ttl, 'born' => time())));
-
-        if ($ok !== true)
-        {
-            $this->_notifyStatus = UglyQueueEnum::QUEUE_FAILED_TO_LOCK;
-            $this->notify();
-            return $this->locked = false;
-        }
-
-        $this->locked = true;
-
-        $this->_notifyStatus = UglyQueueEnum::QUEUE_LOCKED;
-        $this->notify();
-
-        return true;
     }
 
     /**
@@ -450,7 +429,6 @@ HTML;
      */
     public function count()
     {
-        var_dump($this->queueFile);
         return (int)FileHelper::getLineCount($this->queueFile);
     }
 
@@ -524,5 +502,32 @@ HTML;
         {
             $observer->update($this);
         }
+    }
+
+    // --------
+
+    /**
+     * @param int $ttl seconds to live
+     * @return bool
+     */
+    protected function createLockFile($ttl)
+    {
+        $ok = (bool)@file_put_contents(
+            $this->lockFile,
+            json_encode(array('ttl' => $ttl, 'born' => time())));
+
+        if ($ok !== true)
+        {
+            $this->_notifyStatus = UglyQueueEnum::QUEUE_FAILED_TO_LOCK;
+            $this->notify();
+            return $this->locked = false;
+        }
+
+        $this->locked = true;
+
+        $this->_notifyStatus = UglyQueueEnum::QUEUE_LOCKED;
+        $this->notify();
+
+        return true;
     }
 }
