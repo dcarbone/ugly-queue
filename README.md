@@ -3,16 +3,14 @@ ugly-queue
 
 A simple file-based FIFO queue system for PHP 5.3.3+
 
-Build statuses:
-- master: [![Build Status](https://travis-ci.org/dcarbone/ugly-queue.svg?branch=master)](https://travis-ci.org/dcarbone/ugly-queue)
-- 0.3.1: [![Build Status](https://travis-ci.org/dcarbone/ugly-queue.svg?branch=0.3.1)](https://travis-ci.org/dcarbone/ugly-queue)
+Build status: [![Build Status](https://travis-ci.org/dcarbone/ugly-queue.svg?branch=master)](https://travis-ci.org/dcarbone/ugly-queue)
 
 ## Installation
 This library is designed to be installed into your app using [https://getcomposer.org/](Composer).
 Simply copy-paste the following line into your `"requires:"` hash:
 
 ```json
-"dcarbone/ugly-queue": "0.3.*"
+"dcarbone/ugly-queue": "0.4.*"
 ```
 
 ## Basic Usage
@@ -57,9 +55,9 @@ $queueBaseDir = 'path to where you would like queue files and directories to be 
 
 $manager = new UglyQueueManager($queueBaseDir);
 
-// 'tasty-sandwich' queue will exist now
-
 $tastySandwich = $manager->getQueue('sandwiches');
+
+// 'sandwiches' queue will exist now
 
 $tastySandwich->lock();
 
